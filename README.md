@@ -1,179 +1,180 @@
-Flood / Water Spread Mapping using OpenCV and Sentinel-1 SAR
-Overview
+# Flood / Water Spread Mapping using OpenCV and Sentinel-1 SAR
 
-This project implements a classical computer vision approach for flood detection using Sentinel-1 Synthetic Aperture Radar (SAR) imagery from the Sen1Floods11 Essentials (Hand-Labeled) dataset. The system segments flooded regions using intensity-based thresholding and morphological refinement, evaluates performance against manually annotated masks, and visualizes flood predictions for disaster management applications.
+## Overview
 
-The objective is to demonstrate how lightweight OpenCV-based techniques can be used for rapid flood assessment in construction and infrastructure planning scenarios.
+This project implements a classical computer vision approach for flood detection using Sentinel-1 Synthetic Aperture Radar (SAR) imagery from the **Sen1Floods11 Essentials (Hand-Labeled) dataset**. The system segments flooded regions using intensity-based thresholding and morphological refinement, evaluates performance against manually annotated masks, and visualizes flood predictions for disaster management and construction risk assessment applications.
 
-Dataset
+The objective is to demonstrate how lightweight OpenCV-based techniques can be applied for rapid flood monitoring using radar imagery.
 
-Dataset used: Sen1Floods11 Essentials – Hand-Labeled Subset (Kaggle)
+---
 
-Folder structure used in this project:
+## Dataset
 
+Dataset used: **Sen1Floods11 Essentials – Hand-Labeled Subset (Kaggle)**
+
+### Folder Structure
 v1.2/
- └── data/
-      └── flood_events/
-           └── HandLabeled/
-                ├── S1Hand/      # Sentinel-1 SAR images (GeoTIFF)
-                └── LabelHand/   # Ground-truth flood masks
-Data Characteristics
+└── data/
+└── flood_events/
+└── HandLabeled/
+├── S1Hand/ # Sentinel-1 SAR images (GeoTIFF)
+└── LabelHand/ # Ground-truth flood masks
 
-S1Hand
 
-Sentinel-1 SAR backscatter intensity images
+### Data Characteristics
 
-Stored as floating-point GeoTIFF
+#### S1Hand
+- Sentinel-1 SAR backscatter intensity images
+- Floating-point GeoTIFF format
+- Single-channel radar data
 
-Single-channel radar data
+#### LabelHand
+- Manually annotated flood masks
+- Pixel values:
+  - 0 → Non-flood
+  - >0 → Flood
 
-LabelHand
+---
 
-Manually annotated binary flood masks
+## Understanding Image Identification
 
-0 = Non-flood
+### 1️⃣ Original SAR Image (`*_01_s1.png`)
 
-0 = Flooded region
+This is the normalized Sentinel-1 radar image.
 
-Why SAR for Flood Mapping?
+- **Dark regions** → Low backscatter → Likely flood/water  
+- **Bright regions** → High backscatter → Land, vegetation, buildings  
 
-Unlike optical imagery, SAR:
+Water appears dark because smooth surfaces cause specular reflection of radar signals away from the sensor, resulting in low returned energy.
 
-Works in all weather conditions
+---
 
-Is unaffected by cloud cover
+### 2️⃣ Predicted Flood Mask (`*_02_predmask.png`)
 
-Operates independently of daylight
+Binary segmentation result:
 
-In SAR imagery:
+- **White pixels** → Predicted flood  
+- **Black pixels** → Non-flood  
 
-Darker regions → low backscatter → likely water/flood
+Generated using Otsu thresholding and morphological operations.
 
-Brighter regions → high backscatter → land, vegetation, buildings
+---
 
-Flooded surfaces appear dark due to specular reflection of radar signals away from the sensor.
+### 3️⃣ Ground Truth Mask (`*_03_gtmask.png`)
 
-Methodology
-1. Preprocessing
+Manual annotations from dataset:
 
-GeoTIFF images are read using rasterio
+- **White** → Actual flood region  
+- **Black** → Non-flood region  
 
-Floating-point intensities are normalized to 8-bit format
+Used for performance evaluation.
 
-Percentile clipping reduces extreme outliers
+---
 
-Image smoothing applied using Gaussian blur
+### 4️⃣ Overlay Image (`*_04_overlay.png`)
 
-2. Flood Segmentation
+Final visualization combining original SAR and predicted mask:
 
-Otsu’s automatic thresholding is applied
+- **Red regions** → Predicted flooded areas  
+- Red on dark areas → Likely correct detection  
+- Red on bright areas → Possible false positive  
 
-Inversion logic ensures darker regions are classified as flood
+This overlay enables quick visual validation of segmentation accuracy.
 
-Morphological operations:
+---
 
-Opening (noise removal)
+## Methodology
 
-Closing (gap filling)
+### 1. Preprocessing
 
-Output:
+- GeoTIFF images read using `rasterio`
+- Float intensity values normalized to 8-bit range
+- Percentile clipping reduces extreme values
+- Gaussian smoothing reduces speckle noise
 
-Binary flood mask (white = flood, black = non-flood)
+---
 
-3. Evaluation
+### 2. Flood Segmentation
 
-Predicted masks are compared with ground-truth annotations using:
+- Otsu global thresholding applied
+- Inversion logic ensures darker regions represent flood
+- Morphological opening removes noise
+- Morphological closing fills small gaps
 
-Accuracy
+Output: Binary flood mask (white = flood)
 
-Precision
+---
 
-Recall
+### 3. Evaluation Metrics
 
-F1-Score
+Predicted masks are compared against ground truth using:
 
-Intersection over Union (IoU)
+- Accuracy
+- Precision
+- Recall
+- F1-Score
+- Intersection over Union (IoU)
 
-These metrics quantify segmentation performance.
+**IoU Formula:**
+IoU = TP / (TP + FP + FN)
 
-4. Visualization
 
-For each image, the system generates:
+These metrics quantify spatial overlap and classification performance.
 
-Normalized SAR image
+---
 
-Predicted flood mask
-
-Ground truth mask
-
-Overlay image (predicted flood highlighted in red)
-
-Output Structure
+## Output Structure
 
 Generated results are saved in:
-
 outputs_flood_opencv/
 
-For each sample:
 
-_01_s1.png → Original SAR image
+For each image:
 
-_02_predmask.png → Predicted flood mask
+- `_01_s1.png` → Original SAR image  
+- `_02_predmask.png` → Predicted flood mask  
+- `_03_gtmask.png` → Ground truth mask  
+- `_04_overlay.png` → Flood highlighted in red  
+- `metrics_summary.txt` → Performance report  
 
-_03_gtmask.png → Ground truth mask
+---
 
-_04_overlay.png → Flood highlighted in red
+## Applications
 
-metrics_summary.txt → Overall performance metrics
+- Flood-prone zone identification
+- Disaster response support
+- Infrastructure and construction risk analysis
+- Rapid flood screening
+- Preliminary geospatial hazard assessment
 
-Applications
+---
 
-This system can support:
+## Limitations
 
-Disaster response planning
+- Global thresholding may not adapt to complex terrain
+- SAR speckle noise affects detection quality
+- No advanced filtering (e.g., Lee filter) applied
+- Not a deep learning model
 
-Flood-prone area identification
+This project demonstrates a classical computer vision baseline for flood mapping.
 
-Infrastructure risk analysis
+---
 
-Construction project assessment
+## Technologies Used
 
-Rapid flood screening in emergency scenarios
+- Python 3.12
+- OpenCV
+- NumPy
+- Rasterio
+- Glob
+- Difflib
 
-Limitations
+---
 
-Uses global thresholding (Otsu), which may fail in heterogeneous terrain
+## Future Improvements
 
-SAR speckle noise affects segmentation quality
-
-No advanced filtering (e.g., Lee filter) implemented
-
-Performance varies across regions
-
-This project serves as a baseline classical computer vision approach rather than a deep learning model.
-
-Technologies Used
-
-Python 3.12
-
-OpenCV
-
-NumPy
-
-Rasterio
-
-Glob
-
-Difflib
-
-Future Improvements
-
-Apply speckle filtering (Lee/Frost filters)
-
-Use adaptive thresholding
-
-Integrate deep learning models (U-Net)
-
-Add multi-temporal flood change detection module
-
-Incorporate geospatial coordinate visualization
+- Apply speckle filtering (Lee/Frost filters)
+- Implement adaptive thresholding
+- Integrate deep learning models (e.g., U-Net)
+- Add multi-temporal flood change detection
+- Incorporate geospatial coordinate visualization
